@@ -245,11 +245,40 @@ def main():
         
         if choice == 'y':
             try:
+                # Commit the changes
                 subprocess.run(
                     ['git', 'commit', '-m', result['commit_message']],
                     check=True
                 )
                 print("✅ Committed successfully!")
+                
+                # Ask if user wants to push
+                push_choice = input("\nPush to remote? (y/n): ").strip().lower()
+                
+                if push_choice == 'y':
+                    print("\nPushing to remote...")
+                    try:
+                        # Get current branch name
+                        branch_result = subprocess.run(
+                            ['git', 'branch', '--show-current'],
+                            capture_output=True,
+                            text=True,
+                            check=True
+                        )
+                        branch_name = branch_result.stdout.strip()
+                        
+                        # Push to remote
+                        subprocess.run(
+                            ['git', 'push', 'origin', branch_name],
+                            check=True
+                        )
+                        print(f"✅ Pushed to origin/{branch_name} successfully!")
+                    except subprocess.CalledProcessError as e:
+                        print(f"❌ Failed to push: {e}")
+                        print("You can push manually with: git push origin main")
+                else:
+                    print("Changes committed locally. Push manually when ready.")
+                    
             except subprocess.CalledProcessError:
                 print("❌ Failed to commit. You can copy the message manually.")
         else:
