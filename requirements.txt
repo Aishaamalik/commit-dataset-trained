@@ -3,3 +3,5 @@ numpy
 scikit-learn
 groq
 python-dotenv
+flask
+flask-cors

@@ -49,6 +49,11 @@ venv.bak/
 *.pth
 rag_model.pkl
 
+# Frontend
+frontend/node_modules/
+frontend/build/
+frontend/.env
+
 # Data files (uncomment if you don't want to upload CSV)
 # *.csv
 # github_commits_api.csv
