@@ -206,6 +206,14 @@ def main():
     try:
         generator = CommitMessageGenerator()
         
+        # Auto-stage all changes
+        print("\nAuto-staging all changes (git add .)...")
+        try:
+            subprocess.run(['git', 'add', '.'], check=True, capture_output=True)
+            print("✅ Changes staged successfully")
+        except subprocess.CalledProcessError as e:
+            print(f"⚠️  Warning: Could not stage changes: {e}")
+        
         print("\nAnalyzing staged changes...")
         result = generator.generate_commit_message()
         
