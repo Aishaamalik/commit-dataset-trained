@@ -1,195 +1,302 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import './App.css';
 
 function App() {
-  const [gitStatus, setGitStatus] = useState(null);
+  const [files, setFiles] = useState([]);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [fileContent, setFileContent] = useState('');
+  const [gitStatus, setGitStatus] = useState([]);
   const [commitMessage, setCommitMessage] = useState('');
-  const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [notification, setNotification] = useState('');
+  const [expandedFolders, setExpandedFolders] = useState(new Set());
 
-  const API_URL = 'http://localhost:5000/api';
-
-  // Fetch git status on load
   useEffect(() => {
-    fetchGitStatus();
+    loadFiles();
+    loadGitStatus();
   }, []);
 
-  const fetchGitStatus = async () => {
+  const loadFiles = async () => {
     try {
-      const response = await fetch(`${API_URL}/git-status`);
-      const data = await response.json();
-      if (data.success) {
-        setGitStatus(data);
-      }
-    } catch (err) {
-      console.error('Error fetching git status:', err);
+      const response = await axios.get('/api/files');
+      setFiles(response.data.files);
+    } catch (error) {
+      showNotification('Error loading files', 'error');
     }
   };
 
-  const handleStageAll = async () => {
-    setLoading(true);
-    setError('');
+  const loadGitStatus = async () => {
     try {
-      const response = await fetch(`${API_URL}/stage-all`, {
-        method: 'POST',
+      const response = await axios.get('/api/git/status');
+      setGitStatus(response.data.files);
+    } catch (error) {
+      console.error('Error loading git status:', error);
+    }
+  };
+
+  const loadFileContent = async (filePath) => {
+    try {
+      const response = await axios.get('/api/file/content', {
+        params: { path: filePath }
       });
-      const data = await response.json();
-      if (data.success) {
-        setSuccess('All changes staged!');
-        fetchGitStatus();
-      } else {
-        setError(data.error);
-      }
-    } catch (err) {
-      setError('Failed to stage changes');
+      setFileContent(response.data.content);
+      setSelectedFile(filePath);
+    } catch (error) {
+      showNotification('Error loading file', 'error');
+    }
+  };
+
+  const saveFile = async () => {
+    try {
+      await axios.post('/api/file/save', {
+        path: selectedFile,
+        content: fileContent
+      });
+      showNotification('File saved!', 'success');
+      loadGitStatus();
+    } catch (error) {
+      showNotification('Error saving file', 'error');
+    }
+  };
+
+  const stageChanges = async () => {
+    setLoading(true);
+    try {
+      await axios.post('/api/git/add');
+      showNotification('Changes staged!', 'success');
+      loadGitStatus();
+    } catch (error) {
+      showNotification('Error staging changes', 'error');
     }
     setLoading(false);
   };
 
-  const handleGenerate = async () => {
+  const generateCommit = async () => {
     setLoading(true);
-    setError('');
-    setSuccess('');
     try {
-      const response = await fetch(`${API_URL}/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      });
-      const data = await response.json();
-      if (data.success) {
-        setCommitMessage(data.commit_message);
-        setAnalysis(data.analysis);
-        setSuccess('Commit message generated!');
-      } else {
-        setError(data.error);
-      }
-    } catch (err) {
-      setError('Failed to generate commit message');
+      const response = await axios.post('/api/commit/generate');
+      setCommitMessage(response.data.message);
+      showNotification('Commit message generated!', 'success');
+    } catch (error) {
+      showNotification('Error generating commit message', 'error');
     }
     setLoading(false);
   };
 
-  const handleCommit = async () => {
+  const commitChanges = async () => {
     if (!commitMessage) {
-      setError('No commit message to commit');
+      showNotification('Please generate a commit message first', 'error');
       return;
     }
     setLoading(true);
-    setError('');
     try {
-      const response = await fetch(`${API_URL}/commit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: commitMessage }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        setSuccess('Committed successfully!');
-        fetchGitStatus();
-      } else {
-        setError(data.error);
-      }
-    } catch (err) {
-      setError('Failed to commit');
+      await axios.post('/api/git/commit', { message: commitMessage });
+      showNotification('Committed successfully!', 'success');
+      setCommitMessage('');
+      loadGitStatus();
+    } catch (error) {
+      showNotification('Error committing', 'error');
     }
     setLoading(false);
   };
 
-  const handlePush = async () => {
+  const pushChanges = async () => {
     setLoading(true);
-    setError('');
     try {
-      const response = await fetch(`${API_URL}/push`, {
-        method: 'POST',
-      });
-      const data = await response.json();
-      if (data.success) {
-        setSuccess(data.message);
-      } else {
-        setError(data.error);
-      }
-    } catch (err) {
-      setError('Failed to push');
+      await axios.post('/api/git/push');
+      showNotification('Pushed to remote!', 'success');
+    } catch (error) {
+      showNotification('Error pushing to remote', 'error');
     }
     setLoading(false);
+  };
+
+  const showNotification = (message, type = 'info') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(''), 3000);
+  };
+
+  const toggleFolder = (folderPath) => {
+    const newExpanded = new Set(expandedFolders);
+    if (newExpanded.has(folderPath)) {
+      newExpanded.delete(folderPath);
+    } else {
+      newExpanded.add(folderPath);
+    }
+    setExpandedFolders(newExpanded);
+  };
+
+  const getFileIcon = (file) => {
+    if (file.type === 'directory') {
+      return expandedFolders.has(file.path) ? '📂' : '📁';
+    }
+    const ext = file.extension;
+    if (ext === '.py') return '🐍';
+    if (ext === '.js') return '📜';
+    if (ext === '.json') return '📋';
+    if (ext === '.md') return '📝';
+    if (ext === '.css') return '🎨';
+    if (ext === '.html') return '🌐';
+    if (ext === '.csv') return '📊';
+    if (ext === '.txt') return '📄';
+    if (ext === '.bat') return '⚙️';
+    return '📄';
+  };
+
+  const renderFileTree = (items, level = 0) => {
+    return items.map((file, index) => (
+      <div key={file.path}>
+        <div
+          className={`file-item ${selectedFile === file.path ? 'active' : ''}`}
+          style={{ paddingLeft: `${16 + level * 16}px` }}
+          onClick={() => {
+            if (file.type === 'directory') {
+              toggleFolder(file.path);
+            } else {
+              loadFileContent(file.path);
+            }
+          }}
+        >
+          <span className="file-icon">{getFileIcon(file)}</span>
+          <span className="file-name">{file.name}</span>
+          {file.type === 'directory' && file.children && file.children.length > 0 && (
+            <span className="folder-arrow">
+              {expandedFolders.has(file.path) ? '▼' : '▶'}
+            </span>
+          )}
+        </div>
+        {file.type === 'directory' && 
+         expandedFolders.has(file.path) && 
+         file.children && 
+         file.children.length > 0 && (
+          <div className="folder-children">
+            {renderFileTree(file.children, level + 1)}
+          </div>
+        )}
+      </div>
+    ));
   };
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>🤖 AI Commit Message Generator</h1>
-        <p>RAG + Groq LLM</p>
-      </header>
+    <div className="app">
+      {/* Header */}
+      <div className="header">
+        <h1>🤖 Auto Hub AI: An Intelligent ML Framework For GitHub Automation </h1>
+        <div className="header-info">
+          <span>{gitStatus.length} changes</span>
+        </div>
+      </div>
 
-      <div className="container">
-        {/* Git Status */}
-        <div className="card">
-          <h2>📁 Git Status</h2>
-          {gitStatus && (
-            <div>
-              <p><strong>Branch:</strong> {gitStatus.branch}</p>
-              <p><strong>Unstaged files:</strong> {gitStatus.unstaged_files.length}</p>
-              <p><strong>Staged files:</strong> {gitStatus.staged_files.length}</p>
-              {gitStatus.staged_files.length > 0 && (
-                <div className="file-list">
-                  {gitStatus.staged_files.map((file, i) => (
-                    <div key={i} className="file-item">✓ {file}</div>
-                  ))}
+      <div className="main-container">
+        {/* File Explorer - Left Sidebar */}
+        <div className="sidebar left">
+          <div className="sidebar-header">
+            <h3>📂 Files</h3>
+          </div>
+          <div className="file-list">
+            {renderFileTree(files)}
+          </div>
+        </div>
+
+        {/* Code Editor - Center */}
+        <div className="editor-container">
+          <div className="editor-header">
+            <span>{selectedFile || 'No file selected'}</span>
+            {selectedFile && (
+              <button onClick={saveFile} className="btn-save">
+                💾 Save
+              </button>
+            )}
+          </div>
+          <textarea
+            className="code-editor"
+            value={fileContent}
+            onChange={(e) => setFileContent(e.target.value)}
+            placeholder="Select a file to view its content..."
+            spellCheck="false"
+          />
+        </div>
+
+        {/* Git Panel - Right Sidebar */}
+        <div className="sidebar right">
+          <div className="sidebar-header">
+            <h3>🔄 Git Automation</h3>
+          </div>
+
+          <div className="git-panel">
+            {/* Git Status */}
+            <div className="git-section">
+              <h4>Changes ({gitStatus.length})</h4>
+              <div className="git-status-list">
+                {gitStatus.length === 0 ? (
+                  <p className="no-changes">No changes</p>
+                ) : (
+                  gitStatus.map((item, index) => (
+                    <div key={index} className="git-status-item">
+                      <span className="status-badge">{item.status}</span>
+                      <span className="file-name">{item.file}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="git-actions">
+              <button
+                onClick={stageChanges}
+                disabled={loading || gitStatus.length === 0}
+                className="btn-primary"
+              >
+                📦 Stage All Changes
+              </button>
+
+              <button
+                onClick={generateCommit}
+                disabled={loading || gitStatus.length === 0}
+                className="btn-primary"
+              >
+                {loading ? '⏳ Generating...' : '✨ Generate Commit Message'}
+              </button>
+
+              {commitMessage && (
+                <div className="commit-message-box">
+                  <h4>Generated Message:</h4>
+                  <textarea
+                    value={commitMessage}
+                    onChange={(e) => setCommitMessage(e.target.value)}
+                    rows="6"
+                  />
                 </div>
               )}
-            </div>
-          )}
-          <button onClick={handleStageAll} disabled={loading}>
-            Stage All Changes
-          </button>
-        </div>
 
-        {/* Generate */}
-        <div className="card">
-          <h2>✨ Generate Commit Message</h2>
-          <button 
-            onClick={handleGenerate} 
-            disabled={loading || !gitStatus || gitStatus.staged_files.length === 0}
-            className="primary"
-          >
-            {loading ? 'Generating...' : 'Generate Message'}
-          </button>
-        </div>
-
-        {/* Commit Message */}
-        {commitMessage && (
-          <div className="card">
-            <h2>📝 Generated Message</h2>
-            <textarea
-              value={commitMessage}
-              onChange={(e) => setCommitMessage(e.target.value)}
-              rows="6"
-            />
-            {analysis && (
-              <div className="analysis">
-                <p>Files: {analysis.files_changed.length} | 
-                   Added: +{analysis.additions} | 
-                   Deleted: -{analysis.deletions}</p>
-              </div>
-            )}
-            <div className="button-group">
-              <button onClick={handleCommit} disabled={loading} className="primary">
-                Commit
+              <button
+                onClick={commitChanges}
+                disabled={loading || !commitMessage}
+                className="btn-success"
+              >
+                ✅ Commit
               </button>
-              <button onClick={handlePush} disabled={loading}>
-                Push to Remote
+
+              <button
+                onClick={pushChanges}
+                disabled={loading}
+                className="btn-warning"
+              >
+                🚀 Push to Remote
               </button>
             </div>
           </div>
-        )}
-
-        {/* Messages */}
-        {error && <div className="message error">{error}</div>}
-        {success && <div className="message success">{success}</div>}
+        </div>
       </div>
+
+      {/* Notification */}
+      {notification && (
+        <div className={`notification ${notification.type}`}>
+          {notification.message}
+        </div>
+      )}
     </div>
   );
 }

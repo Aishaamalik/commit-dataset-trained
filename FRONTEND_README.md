@@ -1,90 +1,153 @@
-# AI Commit Message Generator - Frontend
+# AI Commit Generator - Web Interface
+
+A beautiful VS Code-like web interface for the AI Commit Message Generator.
+
+## Features
+
+### 🎨 Three-Panel Layout
+
+**Left Sidebar - File Explorer**
+- Browse project files
+- Click to view/edit files
+- File type icons
+
+**Center - Code Editor**
+- View and edit file contents
+- Syntax highlighting
+- Save changes
+
+**Right Sidebar - Git Automation**
+- View changed files
+- Stage all changes
+- Generate AI commit messages
+- Commit with one click
+- Push to remote
 
 ## Quick Start
 
-### Option 1: Use the Startup Script (Windows)
+### Option 1: Automated (Windows)
 ```bash
 start_app.bat
 ```
 
-This will automatically start both the API server and React frontend.
+### Option 2: Manual
 
-### Option 2: Manual Start
-
-**Terminal 1 - Start API Server:**
+**Terminal 1 - Backend:**
 ```bash
 pip install -r requirements.txt
 python api_server.py
 ```
 
-**Terminal 2 - Start React Frontend:**
+**Terminal 2 - Frontend:**
 ```bash
 cd frontend
+npm install
 npm start
 ```
 
-## Access the Application
+## Usage
 
-- **Frontend:** http://localhost:3000
-- **API:** http://localhost:5000
+1. **Open** http://localhost:3000 in your browser
+2. **Browse** files in the left sidebar
+3. **Edit** files in the center editor
+4. **View** changes in the right Git panel
+5. **Click** "Generate Commit Message" to use AI
+6. **Commit** and **Push** with one click!
 
-## Features
+## Architecture
 
-### 1. Git Status View
-- Shows current branch
-- Lists unstaged and staged files
-- One-click staging of all changes
-
-### 2. Generate Commit Message
-- Analyzes staged changes
-- Uses RAG + Groq LLM to generate message
-- Shows file statistics (additions/deletions)
-
-### 3. Commit & Push
-- Edit generated message if needed
-- Commit with one click
-- Push to remote repository
-
-## How to Use
-
-1. **Stage Changes**: Click "Stage All Changes" button
-2. **Generate**: Click "Generate Message" to create commit message
-3. **Review**: Edit the message if needed
-4. **Commit**: Click "Commit" to commit changes
-5. **Push**: Click "Push to Remote" to sync with GitHub
+```
+Frontend (React)          Backend (Flask)           AI System
+    ↓                          ↓                        ↓
+Port 3000              →   Port 5000            →   RAG + Groq
+                           REST API                  LLaMA 3.3
+```
 
 ## API Endpoints
 
-- `GET /api/health` - Health check
-- `GET /api/git-status` - Get git status
-- `POST /api/stage-all` - Stage all changes
-- `POST /api/generate` - Generate commit message
-- `POST /api/commit` - Commit changes
-- `POST /api/push` - Push to remote
+- `GET /api/files` - Get file tree
+- `GET /api/file/content?path=` - Get file content
+- `POST /api/file/save` - Save file
+- `GET /api/git/status` - Git status
+- `POST /api/git/add` - Stage changes
+- `POST /api/commit/generate` - Generate commit message
+- `POST /api/git/commit` - Commit changes
+- `POST /api/git/push` - Push to remote
 
 ## Tech Stack
 
-**Backend:**
-- Flask (Python web framework)
-- Flask-CORS (Cross-origin requests)
-- Groq API (LLM)
-- RAG System (TF-IDF)
-
 **Frontend:**
 - React 18
-- Fetch API
-- CSS3 (Gradient design)
+- Axios for API calls
+- CSS3 (VS Code theme)
+
+**Backend:**
+- Flask (Python web framework)
+- Flask-CORS (Cross-origin support)
+- Subprocess for Git commands
+
+**AI:**
+- RAG system (TF-IDF + Cosine Similarity)
+- Groq API (LLaMA 3.3 70B)
+
+## Screenshots
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  🤖 AI Commit Generator                    3 changes        │
+├──────────┬──────────────────────────┬──────────────────────┤
+│ 📂 Files │  Code Editor             │  🔄 Git Automation   │
+│          │                          │                      │
+│ 📁 src   │  def main():             │  Changes (3)         │
+│ 🐍 app.py│      print("Hello")      │  ┌─────────────────┐│
+│ 📜 api.js│                          │  │ M  app.py       ││
+│ 📝 README│  [Save Button]           │  │ A  new_file.py  ││
+│          │                          │  └─────────────────┘│
+│          │                          │                      │
+│          │                          │  [Stage All]         │
+│          │                          │  [Generate Message]  │
+│          │                          │  [Commit]            │
+│          │                          │  [Push]              │
+└──────────┴──────────────────────────┴──────────────────────┘
+```
+
+## Requirements
+
+- Python 3.7+
+- Node.js 14+
+- Git
+- Groq API key (in `.env`)
 
 ## Troubleshooting
 
-### API not connecting
-- Make sure Flask server is running on port 5000
-- Check GROQ_API_KEY is set in .env file
+**Port already in use:**
+```bash
+# Kill process on port 5000
+netstat -ano | findstr :5000
+taskkill /PID <PID> /F
+```
 
-### Frontend not loading
-- Run `npm install` in frontend directory
-- Check if port 3000 is available
+**CORS errors:**
+- Make sure Flask server is running
+- Check proxy in `frontend/package.json`
 
-### Git commands failing
-- Make sure you're in a git repository
-- Check git is installed and in PATH
+**API key not found:**
+- Ensure `.env` file exists with `GROQ_API_KEY`
+
+## Development
+
+**Hot reload enabled:**
+- Frontend: Changes auto-refresh
+- Backend: Restart Flask server for changes
+
+**Build for production:**
+```bash
+cd frontend
+npm run build
+```
+
+Then Flask will serve the built React app.
+
+---
+
+**Enjoy your AI-powered commit workflow! 🚀**

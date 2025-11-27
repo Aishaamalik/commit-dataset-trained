@@ -1,21 +1,25 @@
 @echo off
 echo ================================================================================
-echo Starting AI Commit Message Generator
+echo Starting AI Commit Generator Web Interface
 echo ================================================================================
 echo.
 
-echo Starting Flask API Server...
+echo Installing Python dependencies...
+pip install -r requirements.txt
+
+echo.
+echo Starting Flask API server...
 start cmd /k "python api_server.py"
 
-timeout /t 3 /nobreak > nul
-
-echo Starting React Frontend...
-cd frontend
-start cmd /k "npm start"
+timeout /t 3
 
 echo.
-echo ================================================================================
-echo Application started!
-echo API: http://localhost:5000
-echo Frontend: http://localhost:3000
-echo ================================================================================
+echo Installing Node.js dependencies...
+cd frontend
+call npm install
+
+echo.
+echo Starting React development server...
+call npm start
+
+pause
