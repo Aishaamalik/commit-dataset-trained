@@ -6,6 +6,7 @@ from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 import os
 import subprocess
+import shutil
 from commit_generator import CommitMessageGenerator
 from dotenv import load_dotenv
 
@@ -14,7 +15,8 @@ load_dotenv()
 app = Flask(__name__, static_folder='frontend/build')
 CORS(app)
 
-# Initialize generator
+# Global state
+current_repo_path = None
 generator = None
 
 def get_generator():
@@ -22,6 +24,12 @@ def get_generator():
     if generator is None:
         generator = CommitMessageGenerator()
     return generator
+
+def get_repo_path():
+    global current_repo_path
+    if current_repo_path is None:
+        return '.'
+    return current_repo_path
 
 
 def build_file_tree(path='.', prefix=''):
@@ -63,12 +71,68 @@ def build_file_tree(path='.', prefix=''):
     return items
 
 
+@app.route('/api/repo/clone', methods=['POST'])
+def clone_repo():
+    """Clone a repository."""
+    global current_repo_path
+    try:
+        data = request.json
+        repo_url = data.get('url')
+        
+        if not repo_url:
+            return jsonify({'error': 'Repository URL is required'}), 400
+        
+        # Extract repo name from URL
+        repo_name = repo_url.rstrip('/').split('/')[-1].replace('.git', '')
+        repo_path = os.path.join('cloned_repos', repo_name)
+        
+        # Remove if exists
+        if os.path.exists(repo_path):
+            shutil.rmtree(repo_path)
+        
+        # Create directory
+        os.makedirs('cloned_repos', exist_ok=True)
+        
+        # Clone repository
+        result = subprocess.run(
+            ['git', 'clone', repo_url, repo_path],
+            capture_output=True,
+            text=True,
+            encoding='utf-8',
+            errors='replace'
+        )
+        
+        if result.returncode != 0:
+            return jsonify({'error': f'Failed to clone: {result.stderr}'}), 400
+        
+        current_repo_path = repo_path
+        return jsonify({
+            'success': True,
+            'message': f'Repository cloned successfully',
+            'path': repo_path,
+            'name': repo_name
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/repo/info', methods=['GET'])
+def get_repo_info():
+    """Get current repository info."""
+    global current_repo_path
+    return jsonify({
+        'path': current_repo_path,
+        'active': current_repo_path is not None
+    })
+
+
 @app.route('/api/files', methods=['GET'])
 def get_files():
     """Get file tree structure."""
     try:
-        tree = build_file_tree('.')
-        return jsonify({'files': tree})
+        base_path = get_repo_path()
+        tree = build_file_tree(base_path)
+        return jsonify({'files': tree, 'repoPath': current_repo_path})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -109,12 +173,14 @@ def save_file():
 def git_status():
     """Get git status."""
     try:
+        repo_path = get_repo_path()
         result = subprocess.run(
             ['git', 'status', '--porcelain'],
             capture_output=True,
             text=True,
             encoding='utf-8',
-            errors='replace'
+            errors='replace',
+            cwd=repo_path
         )
         
         files = []
@@ -136,12 +202,14 @@ def git_status():
 def git_diff():
     """Get git diff."""
     try:
+        repo_path = get_repo_path()
         result = subprocess.run(
             ['git', 'diff'],
             capture_output=True,
             text=True,
             encoding='utf-8',
-            errors='replace'
+            errors='replace',
+            cwd=repo_path
         )
         return jsonify({'diff': result.stdout})
     except Exception as e:
@@ -152,7 +220,8 @@ def git_diff():
 def git_add():
     """Stage all changes."""
     try:
-        subprocess.run(['git', 'add', '.'], check=True, capture_output=True)
+        repo_path = get_repo_path()
+        subprocess.run(['git', 'add', '.'], check=True, capture_output=True, cwd=repo_path)
         return jsonify({'success': True, 'message': 'Changes staged'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -181,13 +250,15 @@ def generate_commit():
 def git_commit():
     """Commit with message."""
     try:
+        repo_path = get_repo_path()
         data = request.json
         message = data.get('message')
         
         subprocess.run(
             ['git', 'commit', '-m', message],
             check=True,
-            capture_output=True
+            capture_output=True,
+            cwd=repo_path
         )
         return jsonify({'success': True, 'message': 'Committed successfully'})
     except Exception as e:
@@ -198,12 +269,15 @@ def git_commit():
 def git_push():
     """Push to remote."""
     try:
+        repo_path = get_repo_path()
+        
         # Get current branch
         branch_result = subprocess.run(
             ['git', 'branch', '--show-current'],
             capture_output=True,
             text=True,
-            check=True
+            check=True,
+            cwd=repo_path
         )
         branch = branch_result.stdout.strip()
         
@@ -211,7 +285,8 @@ def git_push():
         subprocess.run(
             ['git', 'push', 'origin', branch],
             check=True,
-            capture_output=True
+            capture_output=True,
+            cwd=repo_path
         )
         return jsonify({'success': True, 'message': f'Pushed to origin/{branch}'})
     except Exception as e:

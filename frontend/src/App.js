@@ -3,6 +3,9 @@ import axios from 'axios';
 import './App.css';
 
 function App() {
+  const [repoUrl, setRepoUrl] = useState('');
+  const [repoLoaded, setRepoLoaded] = useState(false);
+  const [repoName, setRepoName] = useState('');
   const [files, setFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileContent, setFileContent] = useState('');
@@ -10,12 +13,43 @@ function App() {
   const [commitMessage, setCommitMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState('');
-  const [expandedFolders, setExpandedFolders] = useState(new Set());
 
   useEffect(() => {
-    loadFiles();
-    loadGitStatus();
+    checkRepoStatus();
   }, []);
+
+  const checkRepoStatus = async () => {
+    try {
+      const response = await axios.get('/api/repo/info');
+      if (response.data.active) {
+        setRepoLoaded(true);
+        loadFiles();
+        loadGitStatus();
+      }
+    } catch (error) {
+      console.error('Error checking repo status:', error);
+    }
+  };
+
+  const cloneRepository = async () => {
+    if (!repoUrl.trim()) {
+      showNotification('Please enter a repository URL', 'error');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.post('/api/repo/clone', { url: repoUrl });
+      setRepoName(response.data.name);
+      setRepoLoaded(true);
+      showNotification('Repository cloned successfully!', 'success');
+      loadFiles();
+      loadGitStatus();
+    } catch (error) {
+      showNotification(error.response?.data?.error || 'Error cloning repository', 'error');
+    }
+    setLoading(false);
+  };
 
   const loadFiles = async () => {
     try {
@@ -117,20 +151,8 @@ function App() {
     setTimeout(() => setNotification(''), 3000);
   };
 
-  const toggleFolder = (folderPath) => {
-    const newExpanded = new Set(expandedFolders);
-    if (newExpanded.has(folderPath)) {
-      newExpanded.delete(folderPath);
-    } else {
-      newExpanded.add(folderPath);
-    }
-    setExpandedFolders(newExpanded);
-  };
-
   const getFileIcon = (file) => {
-    if (file.type === 'directory') {
-      return expandedFolders.has(file.path) ? '📂' : '📁';
-    }
+    if (file.type === 'directory') return '📁';
     const ext = file.extension;
     if (ext === '.py') return '🐍';
     if (ext === '.js') return '📜';
@@ -138,52 +160,80 @@ function App() {
     if (ext === '.md') return '📝';
     if (ext === '.css') return '🎨';
     if (ext === '.html') return '🌐';
-    if (ext === '.csv') return '📊';
-    if (ext === '.txt') return '📄';
-    if (ext === '.bat') return '⚙️';
     return '📄';
   };
 
-  const renderFileTree = (items, level = 0) => {
-    return items.map((file, index) => (
-      <div key={file.path}>
+  const renderFileTree = (fileList) => {
+    return fileList.map((file, index) => (
+      <div key={index}>
         <div
           className={`file-item ${selectedFile === file.path ? 'active' : ''}`}
-          style={{ paddingLeft: `${16 + level * 16}px` }}
-          onClick={() => {
-            if (file.type === 'directory') {
-              toggleFolder(file.path);
-            } else {
-              loadFileContent(file.path);
-            }
-          }}
+          onClick={() => file.type === 'file' && loadFileContent(file.path)}
         >
           <span className="file-icon">{getFileIcon(file)}</span>
           <span className="file-name">{file.name}</span>
-          {file.type === 'directory' && file.children && file.children.length > 0 && (
-            <span className="folder-arrow">
-              {expandedFolders.has(file.path) ? '▼' : '▶'}
-            </span>
-          )}
         </div>
-        {file.type === 'directory' && 
-         expandedFolders.has(file.path) && 
-         file.children && 
-         file.children.length > 0 && (
-          <div className="folder-children">
-            {renderFileTree(file.children, level + 1)}
+        {file.children && file.children.length > 0 && (
+          <div className="file-children">
+            {renderFileTree(file.children)}
           </div>
         )}
       </div>
     ));
   };
 
+  // Show repository input screen if no repo is loaded
+  if (!repoLoaded) {
+    return (
+      <div className="app">
+        <div className="repo-input-screen">
+          <div className="repo-input-container">
+            <h1>🤖 AI Commit Generator</h1>
+            <p>Enter a Git repository URL to get started</p>
+            
+            <div className="repo-input-form">
+              <input
+                type="text"
+                placeholder="https://github.com/username/repository.git"
+                value={repoUrl}
+                onChange={(e) => setRepoUrl(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && cloneRepository()}
+                disabled={loading}
+              />
+              <button
+                onClick={cloneRepository}
+                disabled={loading}
+                className="btn-primary"
+              >
+                {loading ? '⏳ Cloning...' : '📥 Clone Repository'}
+              </button>
+            </div>
+
+            <div className="repo-examples">
+              <p>Examples:</p>
+              <code>https://github.com/facebook/react.git</code>
+              <code>https://github.com/microsoft/vscode.git</code>
+            </div>
+          </div>
+        </div>
+
+        {notification && (
+          <div className={`notification ${notification.type}`}>
+            {notification.message}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Main IDE interface
   return (
     <div className="app">
       {/* Header */}
       <div className="header">
-        <h1>🤖 Auto Hub AI: An Intelligent ML Framework For GitHub Automation </h1>
+        <h1>🤖 AI Commit Generator</h1>
         <div className="header-info">
+          <span className="repo-badge">📦 {repoName || 'Repository'}</span>
           <span>{gitStatus.length} changes</span>
         </div>
       </div>

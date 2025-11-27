@@ -49,6 +49,9 @@ venv.bak/
 *.pth
 rag_model.pkl
 
+# Cloned repositories
+cloned_repos/
+
 # Frontend
 frontend/node_modules/
 frontend/build/
