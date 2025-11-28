@@ -24,6 +24,28 @@
   text-align: center;
 }
 
+.repo-screen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  width: 100%;
+}
+
+.repo-screen-header h1 {
+  font-size: 32px;
+  margin: 0;
+  color: #cccccc;
+}
+
+.repo-screen-header .user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #858585;
+}
+
 .repo-input-container h1 {
   font-size: 32px;
   margin-bottom: 12px;
@@ -413,6 +435,18 @@ button:disabled {
 
 .btn-warning:hover:not(:disabled) {
   background: #d4d41a;
+}
+
+.btn-logout {
+  background: #3e3e42;
+  color: #cccccc;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.btn-logout:hover:not(:disabled) {
+  background: #f14c4c;
+  color: white;
 }
 
 /* Notification */

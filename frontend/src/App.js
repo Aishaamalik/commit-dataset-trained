@@ -1,8 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from './firebase';
+import Login from './Login';
+import Register from './Register';
 import './App.css';
 
 function App() {
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [showLogin, setShowLogin] = useState(true);
   const [repoUrl, setRepoUrl] = useState('');
   const [repoLoaded, setRepoLoaded] = useState(false);
   const [repoName, setRepoName] = useState('');
@@ -13,6 +20,16 @@ function App() {
   const [commitMessage, setCommitMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState('');
+
+  // Check authentication state
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setAuthLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     checkRepoStatus();
@@ -166,6 +183,17 @@ function App() {
     setTimeout(() => setNotification(''), 3000);
   };
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setRepoLoaded(false);
+      setRepoUrl('');
+      showNotification('Logged out successfully', 'success');
+    } catch (error) {
+      showNotification('Error logging out', 'error');
+    }
+  };
+
   const getFileIcon = (file) => {
     if (file.type === 'directory') return '📁';
     const ext = file.extension;
@@ -197,13 +225,46 @@ function App() {
     ));
   };
 
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="app">
+        <div className="loading-screen">
+          <h2>Loading...</h2>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login/register if not authenticated
+  if (!user) {
+    if (showLogin) {
+      return (
+        <Login
+          onLoginSuccess={() => {}}
+          onSwitchToRegister={() => setShowLogin(false)}
+        />
+      );
+    } else {
+      return (
+        <Register
+          onRegisterSuccess={() => {}}
+          onSwitchToLogin={() => setShowLogin(true)}
+        />
+      );
+    }
+  }
+
   // Show repository input screen if no repo is loaded
   if (!repoLoaded) {
     return (
       <div className="app">
         <div className="repo-input-screen">
           <div className="repo-input-container">
-            <h1>🤖 AI Commit Generator</h1>
+            <div className="repo-screen-header">
+              <h1>🤖 AI Commit Generator</h1>
+              <button onClick={handleLogout} className="btn-logout">Logout</button>
+            </div>
             <p>Enter a Git repository URL to get started</p>
             
             <div className="repo-input-form">
@@ -250,6 +311,10 @@ function App() {
         <div className="header-info">
           <span className="repo-badge">📦 {repoName || 'Repository'}</span>
           <span>{gitStatus.length} changes</span>
+          <div className="user-info">
+            <span>👤 {user.email}</span>
+            <button onClick={handleLogout} className="btn-logout">Logout</button>
+          </div>
         </div>
       </div>
 
