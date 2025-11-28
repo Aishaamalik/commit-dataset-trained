@@ -18,6 +18,17 @@ function App() {
     checkRepoStatus();
   }, []);
 
+  // Auto-refresh git status when repo is loaded
+  useEffect(() => {
+    if (repoLoaded) {
+      const interval = setInterval(() => {
+        loadGitStatus();
+      }, 3000); // Refresh every 3 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [repoLoaded]);
+
   const checkRepoStatus = async () => {
     try {
       const response = await axios.get('/api/repo/info');
@@ -88,7 +99,11 @@ function App() {
         content: fileContent
       });
       showNotification('File saved!', 'success');
-      loadGitStatus();
+      
+      // Automatically refresh git status after saving
+      setTimeout(() => {
+        loadGitStatus();
+      }, 500);
     } catch (error) {
       showNotification('Error saving file', 'error');
     }
@@ -272,6 +287,13 @@ function App() {
         <div className="sidebar right">
           <div className="sidebar-header">
             <h3>🔄 Git Automation</h3>
+            <button 
+              onClick={loadGitStatus} 
+              className="btn-refresh"
+              title="Refresh git status"
+            >
+              🔄
+            </button>
           </div>
 
           <div className="git-panel">

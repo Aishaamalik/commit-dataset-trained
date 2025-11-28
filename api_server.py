@@ -32,25 +32,28 @@ def get_repo_path():
     return current_repo_path
 
 
-def build_file_tree(path='.', prefix=''):
-    """Recursively build file tree structure."""
+def build_file_tree(base_path, current_path='', prefix=''):
+    """Recursively build file tree structure with relative paths."""
     items = []
     
+    full_path = os.path.join(base_path, current_path) if current_path else base_path
+    
     try:
-        for item in sorted(os.listdir(path)):
+        for item in sorted(os.listdir(full_path)):
             # Skip hidden files except specific ones
-            if item.startswith('.') and item not in ['.env', '.gitignore']:
+            if item.startswith('.') and item not in ['.gitignore']:
                 continue
             # Skip unwanted directories
-            if item in ['__pycache__', 'node_modules', 'build', 'rag_model.pkl', '.git']:
+            if item in ['__pycache__', 'node_modules', 'build', 'rag_model.pkl', '.git', 'cloned_repos', 'frontend']:
                 continue
                 
-            item_path = os.path.join(path, item)
-            is_dir = os.path.isdir(item_path)
+            item_full_path = os.path.join(full_path, item)
+            item_rel_path = os.path.join(current_path, item) if current_path else item
+            is_dir = os.path.isdir(item_full_path)
             
             item_data = {
                 'name': item,
-                'path': item_path.replace('\\', '/'),
+                'path': item_rel_path.replace('\\', '/'),
                 'type': 'directory' if is_dir else 'file',
                 'extension': os.path.splitext(item)[1] if not is_dir else None,
                 'children': []
@@ -58,7 +61,7 @@ def build_file_tree(path='.', prefix=''):
             
             # Recursively get children for directories
             if is_dir:
-                item_data['children'] = build_file_tree(item_path, prefix + item + '/')
+                item_data['children'] = build_file_tree(base_path, item_rel_path, prefix + item + '/')
             
             items.append(item_data)
         
@@ -69,6 +72,13 @@ def build_file_tree(path='.', prefix=''):
         pass
     
     return items
+
+
+def remove_readonly(func, path, excinfo):
+    """Error handler for Windows readonly files."""
+    import stat
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
 
 
 @app.route('/api/repo/clone', methods=['POST'])
@@ -86,9 +96,13 @@ def clone_repo():
         repo_name = repo_url.rstrip('/').split('/')[-1].replace('.git', '')
         repo_path = os.path.join('cloned_repos', repo_name)
         
-        # Remove if exists
+        # Remove if exists (handle Windows readonly files)
         if os.path.exists(repo_path):
-            shutil.rmtree(repo_path)
+            try:
+                shutil.rmtree(repo_path, onerror=remove_readonly)
+            except Exception as e:
+                # If still fails, try to continue anyway
+                print(f"Warning: Could not fully remove old repo: {e}")
         
         # Create directory
         os.makedirs('cloned_repos', exist_ok=True)
@@ -131,6 +145,11 @@ def get_files():
     """Get file tree structure."""
     try:
         base_path = get_repo_path()
+        
+        # If no repo is cloned, return empty
+        if current_repo_path is None:
+            return jsonify({'files': [], 'repoPath': None})
+        
         tree = build_file_tree(base_path)
         return jsonify({'files': tree, 'repoPath': current_repo_path})
     except Exception as e:
@@ -141,14 +160,17 @@ def get_files():
 def get_file_content():
     """Get content of a specific file."""
     try:
-        file_path = request.args.get('path')
-        if not file_path or not os.path.exists(file_path):
+        base_path = get_repo_path()
+        rel_path = request.args.get('path')
+        file_path = os.path.join(base_path, rel_path)
+        
+        if not os.path.exists(file_path):
             return jsonify({'error': 'File not found'}), 404
         
         with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
             content = f.read()
         
-        return jsonify({'content': content, 'path': file_path})
+        return jsonify({'content': content, 'path': rel_path})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -157,9 +179,12 @@ def get_file_content():
 def save_file():
     """Save file content."""
     try:
+        base_path = get_repo_path()
         data = request.json
-        file_path = data.get('path')
+        rel_path = data.get('path')
         content = data.get('content')
+        
+        file_path = os.path.join(base_path, rel_path)
         
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(content)
@@ -173,6 +198,10 @@ def save_file():
 def git_status():
     """Get git status."""
     try:
+        # Only check status if a repo is cloned
+        if current_repo_path is None:
+            return jsonify({'files': []})
+        
         repo_path = get_repo_path()
         result = subprocess.run(
             ['git', 'status', '--porcelain'],
@@ -231,8 +260,37 @@ def git_add():
 def generate_commit():
     """Generate commit message."""
     try:
+        repo_path = get_repo_path()
         gen = get_generator()
-        result = gen.generate_commit_message()
+        
+        # Get diff from the cloned repository
+        diff_result = subprocess.run(
+            ['git', 'diff', '--cached'],
+            capture_output=True,
+            text=True,
+            encoding='utf-8',
+            errors='replace',
+            cwd=repo_path
+        )
+        
+        diff_text = diff_result.stdout
+        
+        if not diff_text:
+            # Try unstaged changes
+            diff_result = subprocess.run(
+                ['git', 'diff'],
+                capture_output=True,
+                text=True,
+                encoding='utf-8',
+                errors='replace',
+                cwd=repo_path
+            )
+            diff_text = diff_result.stdout
+        
+        if not diff_text:
+            return jsonify({'error': 'No changes found'}), 400
+        
+        result = gen.generate_commit_message(diff_text=diff_text)
         
         if 'error' in result:
             return jsonify({'error': result['error']}), 400
