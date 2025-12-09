@@ -5,6 +5,7 @@
   justify-content: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 20px;
+  overflow-y: auto;
 }
 
 .auth-box {
@@ -15,6 +16,9 @@
   max-width: 450px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   position: relative;
+  margin: auto;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .auth-header {
@@ -219,4 +223,28 @@
 .close-btn:hover {
   background: #ffebee;
   color: #c33;
+}
+
+/* Scrollbar styling for auth box */
+.auth-box::-webkit-scrollbar {
+  width: 6px;
+}
+
+.auth-box::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 3px;
+}
+
+.auth-box::-webkit-scrollbar-thumb {
+  background: #9b59b6;
+  border-radius: 3px;
+}
+
+.auth-box::-webkit-scrollbar-thumb:hover {
+  background: #8e44ad;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
 }

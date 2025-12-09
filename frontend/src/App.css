@@ -1,17 +1,21 @@
 .app {
+  min-height: 100vh;
   height: 100vh;
   display: flex;
   flex-direction: column;
   background: #1e1e1e;
+  overflow: hidden;
 }
 
 /* Repository Input Screen */
 .repo-input-screen {
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #1e1e1e 0%, #2d2d30 100%);
+  overflow-y: auto;
+  padding: 20px;
 }
 
 .repo-input-container {
@@ -22,6 +26,7 @@
   max-width: 600px;
   width: 90%;
   text-align: center;
+  margin: auto;
 }
 
 .repo-screen-header {
@@ -119,6 +124,69 @@
   margin-bottom: 0;
 }
 
+/* GitHub Option */
+.github-option {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.btn-github {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #6e5494 0%, #8b6bb7 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(110, 84, 148, 0.3);
+}
+
+.btn-github:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(110, 84, 148, 0.4);
+}
+
+.option-description {
+  color: #858585;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.divider-text {
+  text-align: center;
+  margin: 24px 0;
+  position: relative;
+}
+
+.divider-text::before,
+.divider-text::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 40%;
+  height: 1px;
+  background: #3e3e42;
+}
+
+.divider-text::before {
+  left: 0;
+}
+
+.divider-text::after {
+  right: 0;
+}
+
+.divider-text span {
+  background: #252526;
+  padding: 0 16px;
+  color: #858585;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .header {
   background: #252526;
   padding: 12px 20px;
@@ -155,6 +223,7 @@
   display: flex;
   flex: 1;
   overflow: hidden;
+  min-height: 0;
 }
 
 /* Sidebars */
@@ -192,26 +261,30 @@
 }
 
 .btn-refresh {
-  background: transparent;
-  border: 1px solid #3e3e42;
-  color: #cccccc;
-  padding: 4px 8px;
+  background: #0e639c;
+  border: 1px solid #0e639c;
+  color: white;
+  padding: 6px 12px;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 12px;
+  font-weight: 600;
   transition: all 0.2s;
 }
 
 .btn-refresh:hover {
-  background: #3e3e42;
-  border-color: #0e639c;
+  background: #1177bb;
+  border-color: #1177bb;
+  transform: scale(1.05);
 }
 
 /* File List */
 .file-list {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 8px 0;
+  min-height: 0;
 }
 
 .file-item {
@@ -298,10 +371,12 @@
 .git-panel {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-height: 0;
 }
 
 .git-section h4 {
@@ -490,6 +565,11 @@ button:disabled {
 }
 
 /* Scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #424242 #1e1e1e;
+}
+
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -506,4 +586,9 @@ button:disabled {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #4e4e4e;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
 }

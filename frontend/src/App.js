@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut, GithubAuthProvider } from 'firebase/auth';
 import { auth } from './firebase';
 import Login from './Login';
 import Register from './Register';
+import GitHubDashboard from './GitHubDashboard';
+import GitHubConnect from './GitHubConnect';
 import './App.css';
 
 function App() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [showLogin, setShowLogin] = useState(true);
+  const [githubToken, setGithubToken] = useState(null);
+  const [showGithubConnect, setShowGithubConnect] = useState(false);
+  const [showGithubDashboard, setShowGithubDashboard] = useState(false);
   const [repoUrl, setRepoUrl] = useState('');
   const [repoLoaded, setRepoLoaded] = useState(false);
   const [repoName, setRepoName] = useState('');
@@ -23,8 +28,37 @@ function App() {
 
   // Check authentication state
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
+      
+      // Try to get GitHub token if user logged in with GitHub
+      if (currentUser) {
+        try {
+          const credential = GithubAuthProvider.credentialFromResult(currentUser);
+          if (credential) {
+            const token = credential.accessToken;
+            if (token) {
+              setGithubToken(token);
+              // Verify token with backend
+              await axios.post('/api/github/connect', { token });
+            }
+          } else {
+            // User logged in with email/Google, check if they want to connect GitHub
+            const hasSeenPrompt = localStorage.getItem('github_connect_prompted');
+            if (!hasSeenPrompt) {
+              setShowGithubConnect(true);
+            }
+          }
+        } catch (error) {
+          console.log('No GitHub credential found');
+          // Show GitHub connect prompt for non-GitHub logins
+          const hasSeenPrompt = localStorage.getItem('github_connect_prompted');
+          if (!hasSeenPrompt) {
+            setShowGithubConnect(true);
+          }
+        }
+      }
+      
       setAuthLoading(false);
     });
 
@@ -65,14 +99,21 @@ function App() {
       return;
     }
 
+    // Clear previous repository state
+    setSelectedFile(null);
+    setFileContent('');
+    setFiles([]);
+    setGitStatus([]);
+    setCommitMessage('');
+
     setLoading(true);
     try {
       const response = await axios.post('/api/repo/clone', { url: repoUrl });
       setRepoName(response.data.name);
       setRepoLoaded(true);
       showNotification('Repository cloned successfully!', 'success');
-      loadFiles();
-      loadGitStatus();
+      await loadFiles();
+      await loadGitStatus();
     } catch (error) {
       showNotification(error.response?.data?.error || 'Error cloning repository', 'error');
     }
@@ -105,7 +146,17 @@ function App() {
       setFileContent(response.data.content);
       setSelectedFile(filePath);
     } catch (error) {
-      showNotification('Error loading file', 'error');
+      const errorMsg = error.response?.data?.error || 'Error loading file';
+      
+      if (error.response?.data?.binary) {
+        setFileContent('⚠️ This is a binary file and cannot be displayed or edited.\n\nBinary files include images, executables, archives, and other non-text formats.');
+        setSelectedFile(filePath);
+        showNotification('Binary file cannot be displayed', 'info');
+      } else {
+        setFileContent('');
+        setSelectedFile(null);
+        showNotification(errorMsg, 'error');
+      }
     }
   };
 
@@ -117,10 +168,13 @@ function App() {
       });
       showNotification('File saved!', 'success');
       
-      // Automatically refresh git status after saving
+      // Immediately refresh git status after saving
+      await loadGitStatus();
+      
+      // Refresh again after a short delay to catch any delayed changes
       setTimeout(() => {
         loadGitStatus();
-      }, 500);
+      }, 1000);
     } catch (error) {
       showNotification('Error saving file', 'error');
     }
@@ -186,12 +240,68 @@ function App() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
+      // Clear all state
       setRepoLoaded(false);
       setRepoUrl('');
+      setRepoName('');
+      setGithubToken(null);
+      setShowGithubConnect(false);
+      setShowGithubDashboard(false);
+      setFiles([]);
+      setSelectedFile(null);
+      setFileContent('');
+      setGitStatus([]);
+      setCommitMessage('');
+      localStorage.removeItem('github_connect_prompted');
       showNotification('Logged out successfully', 'success');
     } catch (error) {
       showNotification('Error logging out', 'error');
     }
+  };
+
+  const handleGithubConnectSuccess = async (token) => {
+    setGithubToken(token);
+    setShowGithubConnect(false);
+    localStorage.setItem('github_connect_prompted', 'true');
+    try {
+      await axios.post('/api/github/connect', { token });
+      showNotification('GitHub connected successfully!', 'success');
+    } catch (error) {
+      console.error('Error connecting GitHub:', error);
+    }
+  };
+
+  const handleSkipGithubConnect = () => {
+    setShowGithubConnect(false);
+    localStorage.setItem('github_connect_prompted', 'true');
+    showNotification('You can connect GitHub later from settings', 'info');
+  };
+
+  const handleGithubDashboardSelect = async (cloneUrl, name) => {
+    // Clear previous repository state
+    setSelectedFile(null);
+    setFileContent('');
+    setFiles([]);
+    setGitStatus([]);
+    setCommitMessage('');
+    
+    setRepoUrl(cloneUrl);
+    setRepoName(name);
+    setShowGithubDashboard(false);
+    
+    // Clone the repository
+    setLoading(true);
+    try {
+      const response = await axios.post('/api/repo/clone', { url: cloneUrl });
+      setRepoName(response.data.name);
+      setRepoLoaded(true);
+      showNotification('Repository cloned successfully!', 'success');
+      await loadFiles();
+      await loadGitStatus();
+    } catch (error) {
+      showNotification(error.response?.data?.error || 'Error cloning repository', 'error');
+    }
+    setLoading(false);
   };
 
   const getFileIcon = (file) => {
@@ -238,11 +348,21 @@ function App() {
 
   // Show login/register if not authenticated
   if (!user) {
+    const handleGithubToken = async (token) => {
+      setGithubToken(token);
+      try {
+        await axios.post('/api/github/connect', { token });
+      } catch (error) {
+        console.error('Error connecting GitHub:', error);
+      }
+    };
+
     if (showLogin) {
       return (
         <Login
           onLoginSuccess={() => {}}
           onSwitchToRegister={() => setShowLogin(false)}
+          onGithubToken={handleGithubToken}
         />
       );
     } else {
@@ -250,9 +370,32 @@ function App() {
         <Register
           onRegisterSuccess={() => {}}
           onSwitchToLogin={() => setShowLogin(true)}
+          onGithubToken={handleGithubToken}
         />
       );
     }
+  }
+
+  // Show GitHub Connect modal if needed
+  if (showGithubConnect && user && !githubToken) {
+    return (
+      <GitHubConnect
+        user={user}
+        onConnect={handleGithubConnectSuccess}
+        onSkip={handleSkipGithubConnect}
+      />
+    );
+  }
+
+  // Show GitHub Dashboard if requested
+  if (showGithubDashboard && githubToken) {
+    return (
+      <GitHubDashboard
+        githubToken={githubToken}
+        onBack={() => setShowGithubDashboard(false)}
+        onSelectRepo={handleGithubDashboardSelect}
+      />
+    );
   }
 
   // Show repository input screen if no repo is loaded
@@ -265,7 +408,25 @@ function App() {
               <h1>🤖 AI Commit Generator</h1>
               <button onClick={handleLogout} className="btn-logout">Logout</button>
             </div>
-            <p>Enter a Git repository URL to get started</p>
+            <p>Choose how to get started</p>
+            
+            {githubToken && (
+              <div className="github-option">
+                <button
+                  onClick={() => setShowGithubDashboard(true)}
+                  className="btn-github"
+                >
+                  🐙 GitHub Automation
+                </button>
+                <p className="option-description">
+                  Browse your repositories or upload a new project
+                </p>
+              </div>
+            )}
+
+            <div className="divider-text">
+              <span>OR</span>
+            </div>
             
             <div className="repo-input-form">
               <input
@@ -353,11 +514,14 @@ function App() {
           <div className="sidebar-header">
             <h3>🔄 Git Automation</h3>
             <button 
-              onClick={loadGitStatus} 
+              onClick={() => {
+                loadGitStatus();
+                showNotification('Git status refreshed', 'info');
+              }} 
               className="btn-refresh"
               title="Refresh git status"
             >
-              🔄
+              🔄 Refresh
             </button>
           </div>
 

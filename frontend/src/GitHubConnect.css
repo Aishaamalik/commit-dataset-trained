@@ -1,0 +1,168 @@
+.github-connect-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.github-connect-modal {
+  background: #252526;
+  border-radius: 12px;
+  padding: 40px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.3s ease;
+}
+
+.modal-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.modal-header h2 {
+  font-size: 28px;
+  color: #cccccc;
+  margin: 0 0 8px 0;
+}
+
+.modal-header p {
+  color: #858585;
+  font-size: 14px;
+  margin: 0;
+}
+
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.features-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.feature-item {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 16px;
+  background: #1e1e1e;
+  border-radius: 8px;
+  border: 1px solid #3e3e42;
+}
+
+.feature-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.feature-item h4 {
+  font-size: 16px;
+  color: #cccccc;
+  margin: 0 0 4px 0;
+}
+
+.feature-item p {
+  font-size: 13px;
+  color: #858585;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.error-message {
+  background: #f14c4c;
+  color: white;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  text-align: center;
+}
+
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.btn-connect {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #6e5494 0%, #8b6bb7 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-connect:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(110, 84, 148, 0.4);
+}
+
+.btn-connect:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-skip {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  color: #858585;
+  border: 1px solid #3e3e42;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-skip:hover:not(:disabled) {
+  background: #3e3e42;
+  color: #cccccc;
+}
+
+.btn-skip:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.modal-note {
+  text-align: center;
+  color: #858585;
+  font-size: 12px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

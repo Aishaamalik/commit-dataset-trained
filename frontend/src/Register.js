@@ -3,7 +3,7 @@ import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, Gi
 import { auth } from './firebase';
 import './Login.css';
 
-function Register({ onRegisterSuccess, onSwitchToLogin }) {
+function Register({ onRegisterSuccess, onSwitchToLogin, onGithubToken }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -39,7 +39,11 @@ function Register({ onRegisterSuccess, onSwitchToLogin }) {
       await signInWithPopup(auth, provider);
       onRegisterSuccess();
     } catch (err) {
-      setError(err.message);
+      if (err.code === 'auth/account-exists-with-different-credential') {
+        setError('An account already exists with this email using a different sign-in method. Please use the original sign-in method.');
+      } else {
+        setError(err.message);
+      }
     }
     setLoading(false);
   };
@@ -48,12 +52,25 @@ function Register({ onRegisterSuccess, onSwitchToLogin }) {
     setLoading(true);
     setError('');
     const provider = new GithubAuthProvider();
+    provider.addScope('repo');
+    provider.addScope('user');
 
     try {
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const credential = GithubAuthProvider.credentialFromResult(result);
+      const token = credential.accessToken;
+      
+      if (token && onGithubToken) {
+        onGithubToken(token);
+      }
+      
       onRegisterSuccess();
     } catch (err) {
-      setError(err.message);
+      if (err.code === 'auth/account-exists-with-different-credential') {
+        setError('An account already exists with this email using a different sign-in method. Please use the original sign-in method.');
+      } else {
+        setError(err.message);
+      }
     }
     setLoading(false);
   };
