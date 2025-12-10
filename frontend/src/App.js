@@ -61,22 +61,16 @@ function App() {
               await axios.post('/api/github/connect', { token });
             }
           } else {
-            // User logged in with email, check if they want to connect GitHub
-            if (!isRegistering) {
-              const hasSeenPrompt = localStorage.getItem('github_connect_prompted');
-              if (!hasSeenPrompt) {
-                setShowGithubConnect(true);
-              }
+            // User logged in with email, show GitHub connect page if they don't have a token
+            if (!isRegistering && !githubToken) {
+              setShowGithubConnect(true);
             }
           }
         } catch (error) {
           console.log('No GitHub credential found');
-          // Show GitHub connect prompt for email logins
-          if (!isRegistering) {
-            const hasSeenPrompt = localStorage.getItem('github_connect_prompted');
-            if (!hasSeenPrompt) {
-              setShowGithubConnect(true);
-            }
+          // Show GitHub connect prompt for email logins if they don't have a token
+          if (!isRegistering && !githubToken) {
+            setShowGithubConnect(true);
           }
         }
       } else {
