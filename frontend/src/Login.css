@@ -92,7 +92,16 @@
   text-align: left;
 }
 
-.submit-btn {
+.success-message {
+  background-color: #efe;
+  color: #3c3;
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 14px;
+  text-align: left;
+}
+
+.submit-btn, .register-btn {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
@@ -104,12 +113,12 @@
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.submit-btn:hover:not(:disabled) {
+.submit-btn:hover:not(:disabled), .register-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
 }
 
-.submit-btn:disabled {
+.submit-btn:disabled, .register-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
@@ -164,10 +173,6 @@
 .social-btn img {
   width: 20px;
   height: 20px;
-}
-
-.google-btn {
-  color: #333;
 }
 
 .github-btn {

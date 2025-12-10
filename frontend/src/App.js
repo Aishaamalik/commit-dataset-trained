@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { onAuthStateChanged, signOut, GithubAuthProvider } from 'firebase/auth';
 import { auth } from './firebase';
+import { getUserData } from './userService';
 import Login from './Login';
 import Register from './Register';
 import GitHubDashboard from './GitHubDashboard';
@@ -10,11 +11,13 @@ import './App.css';
 
 function App() {
   const [user, setUser] = useState(null);
+  const [userData, setUserData] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [showLogin, setShowLogin] = useState(true);
   const [githubToken, setGithubToken] = useState(null);
   const [showGithubConnect, setShowGithubConnect] = useState(false);
   const [showGithubDashboard, setShowGithubDashboard] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
   const [repoUrl, setRepoUrl] = useState('');
   const [repoLoaded, setRepoLoaded] = useState(false);
   const [repoName, setRepoName] = useState('');
@@ -29,10 +32,25 @@ function App() {
   // Check authentication state
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      // Skip all authentication processing if user is being registered
+      const isRegisteringUser = localStorage.getItem('registering_user');
+      const showRegistrationSuccess = localStorage.getItem('show_registration_success');
+      
+      if (isRegisteringUser || showRegistrationSuccess) {
+        return; // Don't process authentication during registration or success display
+      }
+      
       setUser(currentUser);
       
-      // Try to get GitHub token if user logged in with GitHub
+      // Get user data from Firestore
       if (currentUser) {
+        try {
+          const userInfo = await getUserData(currentUser.uid);
+          setUserData(userInfo);
+        } catch (error) {
+          console.error('Error loading user data:', error);
+        }
+
         try {
           const credential = GithubAuthProvider.credentialFromResult(currentUser);
           if (credential) {
@@ -43,20 +61,26 @@ function App() {
               await axios.post('/api/github/connect', { token });
             }
           } else {
-            // User logged in with email/Google, check if they want to connect GitHub
+            // User logged in with email, check if they want to connect GitHub
+            if (!isRegistering) {
+              const hasSeenPrompt = localStorage.getItem('github_connect_prompted');
+              if (!hasSeenPrompt) {
+                setShowGithubConnect(true);
+              }
+            }
+          }
+        } catch (error) {
+          console.log('No GitHub credential found');
+          // Show GitHub connect prompt for email logins
+          if (!isRegistering) {
             const hasSeenPrompt = localStorage.getItem('github_connect_prompted');
             if (!hasSeenPrompt) {
               setShowGithubConnect(true);
             }
           }
-        } catch (error) {
-          console.log('No GitHub credential found');
-          // Show GitHub connect prompt for non-GitHub logins
-          const hasSeenPrompt = localStorage.getItem('github_connect_prompted');
-          if (!hasSeenPrompt) {
-            setShowGithubConnect(true);
-          }
         }
+      } else {
+        setUserData(null);
       }
       
       setAuthLoading(false);
@@ -67,6 +91,17 @@ function App() {
 
   useEffect(() => {
     checkRepoStatus();
+    // Clean up any stale registration flags on app start
+    const isRegisteringUser = localStorage.getItem('registering_user');
+    const showRegistrationSuccess = localStorage.getItem('show_registration_success');
+    const registrationComplete = localStorage.getItem('registration_complete');
+    
+    if (isRegisteringUser || showRegistrationSuccess || registrationComplete) {
+      // Clean up stale registration flags (shouldn't persist across app restarts)
+      localStorage.removeItem('registering_user');
+      localStorage.removeItem('show_registration_success');
+      localStorage.removeItem('registration_complete');
+    }
   }, []);
 
   // Auto-refresh git status when repo is loaded
@@ -244,9 +279,11 @@ function App() {
       setRepoLoaded(false);
       setRepoUrl('');
       setRepoName('');
+      setUserData(null);
       setGithubToken(null);
       setShowGithubConnect(false);
       setShowGithubDashboard(false);
+      setIsRegistering(false);
       setFiles([]);
       setSelectedFile(null);
       setFileContent('');
@@ -361,7 +398,10 @@ function App() {
       return (
         <Login
           onLoginSuccess={() => {}}
-          onSwitchToRegister={() => setShowLogin(false)}
+          onSwitchToRegister={() => {
+            setIsRegistering(false);
+            setShowLogin(false);
+          }}
           onGithubToken={handleGithubToken}
         />
       );
@@ -369,8 +409,12 @@ function App() {
       return (
         <Register
           onRegisterSuccess={() => {}}
-          onSwitchToLogin={() => setShowLogin(true)}
+          onSwitchToLogin={() => {
+            setIsRegistering(false);
+            setShowLogin(true);
+          }}
           onGithubToken={handleGithubToken}
+          onStartRegistration={() => setIsRegistering(true)}
         />
       );
     }
@@ -473,7 +517,7 @@ function App() {
           <span className="repo-badge">📦 {repoName || 'Repository'}</span>
           <span>{gitStatus.length} changes</span>
           <div className="user-info">
-            <span>👤 {user.email}</span>
+            <span>👤 {userData?.username || user.email}</span>
             <button onClick={handleLogout} className="btn-logout">Logout</button>
           </div>
         </div>

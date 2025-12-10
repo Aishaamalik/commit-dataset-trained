@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, GithubAuthProvider } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithPopup, GithubAuthProvider } from 'firebase/auth';
 import { auth } from './firebase';
 import './Login.css';
 
@@ -16,6 +16,8 @@ function Login({ onLoginSuccess, onSwitchToRegister, onGithubToken }) {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      // Clear registration flag if it exists
+      localStorage.removeItem('registering_user');
       onLoginSuccess();
     } catch (err) {
       setError(err.message);
@@ -23,23 +25,7 @@ function Login({ onLoginSuccess, onSwitchToRegister, onGithubToken }) {
     setLoading(false);
   };
 
-  const handleGoogleLogin = async () => {
-    setLoading(true);
-    setError('');
-    const provider = new GoogleAuthProvider();
 
-    try {
-      await signInWithPopup(auth, provider);
-      onLoginSuccess();
-    } catch (err) {
-      if (err.code === 'auth/account-exists-with-different-credential') {
-        setError('An account already exists with this email using a different sign-in method. Please use the original sign-in method.');
-      } else {
-        setError(err.message);
-      }
-    }
-    setLoading(false);
-  };
 
   const handleGithubLogin = async () => {
     setLoading(true);
@@ -52,11 +38,21 @@ function Login({ onLoginSuccess, onSwitchToRegister, onGithubToken }) {
       const result = await signInWithPopup(auth, provider);
       const credential = GithubAuthProvider.credentialFromResult(result);
       const token = credential.accessToken;
+      const user = result.user;
+      
+      // Check if user data exists in localStorage, if not create it
+      const existingUsername = localStorage.getItem(`user_${user.uid}_username`);
+      if (!existingUsername) {
+        const githubUsername = result.additionalUserInfo?.username || user.displayName || 'github_user';
+        localStorage.setItem(`user_${user.uid}_username`, githubUsername);
+      }
       
       if (token && onGithubToken) {
         onGithubToken(token);
       }
       
+      // Clear registration flag if it exists
+      localStorage.removeItem('registering_user');
       onLoginSuccess();
     } catch (err) {
       if (err.code === 'auth/account-exists-with-different-credential') {
@@ -111,11 +107,6 @@ function Login({ onLoginSuccess, onSwitchToRegister, onGithubToken }) {
           <div className="divider">
             <span>OR</span>
           </div>
-
-          <button className="social-btn google-btn" onClick={handleGoogleLogin} disabled={loading}>
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
-            Login with Google
-          </button>
 
           <button className="social-btn github-btn" onClick={handleGithubLogin} disabled={loading}>
             <svg height="20" width="20" viewBox="0 0 16 16" fill="currentColor">
