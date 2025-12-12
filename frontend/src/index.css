@@ -1,3 +1,19 @@
+:root {
+  --primary-dark: #1B3C53;
+  --primary-medium: #234C6A;
+  --primary-bright: #456882;
+  --primary-light: #D2C1B6;
+  --text-primary: #D2C1B6;
+  --text-secondary: rgba(210, 193, 182, 0.7);
+  --text-muted: rgba(210, 193, 182, 0.5);
+  --background-primary: #1B3C53;
+  --background-secondary: #234C6A;
+  --background-tertiary: #456882;
+  --accent: #D2C1B6;
+  --border: rgba(210, 193, 182, 0.2);
+  --hover: rgba(210, 193, 182, 0.1);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -10,8 +26,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #1e1e1e;
-  color: #d4d4d4;
+  background: var(--background-primary);
+  color: var(--text-primary);
   overflow: hidden;
 }
 

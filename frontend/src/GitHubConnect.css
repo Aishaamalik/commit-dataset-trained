@@ -13,12 +13,13 @@
 }
 
 .github-connect-modal {
-  background: #252526;
+  background: var(--background-secondary);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 40px;
   max-width: 500px;
   width: 90%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
   animation: slideUp 0.3s ease;
 }
 
@@ -29,12 +30,12 @@
 
 .modal-header h2 {
   font-size: 28px;
-  color: #cccccc;
+  color: var(--text-primary);
   margin: 0 0 8px 0;
 }
 
 .modal-header p {
-  color: #858585;
+  color: var(--text-secondary);
   font-size: 14px;
   margin: 0;
 }
@@ -56,36 +57,38 @@
   gap: 16px;
   align-items: flex-start;
   padding: 16px;
-  background: #1e1e1e;
+  background: var(--background-primary);
   border-radius: 8px;
-  border: 1px solid #3e3e42;
+  border: 1px solid var(--border);
 }
 
 .feature-icon {
   font-size: 32px;
   flex-shrink: 0;
+  color: var(--accent);
 }
 
 .feature-item h4 {
   font-size: 16px;
-  color: #cccccc;
+  color: var(--text-primary);
   margin: 0 0 4px 0;
 }
 
 .feature-item p {
   font-size: 13px;
-  color: #858585;
+  color: var(--text-secondary);
   margin: 0;
   line-height: 1.5;
 }
 
 .error-message {
-  background: #f14c4c;
-  color: white;
+  background: var(--primary-bright);
+  color: var(--accent);
   padding: 12px;
   border-radius: 6px;
   font-size: 13px;
   text-align: center;
+  border: 1px solid rgba(210, 193, 182, 0.3);
 }
 
 .modal-actions {
@@ -97,8 +100,8 @@
 .btn-connect {
   width: 100%;
   padding: 14px;
-  background: linear-gradient(135deg, #6e5494 0%, #8b6bb7 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--primary-bright) 0%, var(--background-tertiary) 100%);
+  color: var(--accent);
   border: none;
   border-radius: 8px;
   font-size: 16px;
@@ -109,7 +112,8 @@
 
 .btn-connect:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(110, 84, 148, 0.4);
+  box-shadow: 0 6px 20px rgba(69, 104, 130, 0.4);
+  background: linear-gradient(135deg, var(--background-tertiary) 0%, var(--primary-bright) 100%);
 }
 
 .btn-connect:disabled {
@@ -121,8 +125,8 @@
   width: 100%;
   padding: 12px;
   background: transparent;
-  color: #858585;
-  border: 1px solid #3e3e42;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
   border-radius: 8px;
   font-size: 14px;
   cursor: pointer;
@@ -130,8 +134,9 @@
 }
 
 .btn-skip:hover:not(:disabled) {
-  background: #3e3e42;
-  color: #cccccc;
+  background: var(--background-primary);
+  color: var(--text-primary);
+  border-color: var(--primary-bright);
 }
 
 .btn-skip:disabled {
@@ -141,7 +146,7 @@
 
 .modal-note {
   text-align: center;
-  color: #858585;
+  color: var(--text-secondary);
   font-size: 12px;
   margin: 0;
   line-height: 1.5;

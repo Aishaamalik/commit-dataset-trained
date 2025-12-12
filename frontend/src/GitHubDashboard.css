@@ -1,6 +1,6 @@
 .github-dashboard {
   min-height: 100vh;
-  background: linear-gradient(135deg, #1e1e1e 0%, #2d2d30 100%);
+  background: linear-gradient(135deg, var(--background-primary) 0%, var(--background-secondary) 100%);
   padding: 40px 20px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -21,25 +21,25 @@
 
 .dashboard-header h1 {
   font-size: 32px;
-  color: #cccccc;
+  color: var(--text-primary);
   margin: 0 0 8px 0;
 }
 
 .github-user-info {
-  color: #858585;
+  color: var(--text-secondary);
   font-size: 14px;
   margin: 0;
 }
 
 .github-user-info strong {
-  color: #4ec9b0;
+  color: var(--accent);
 }
 
 .btn-back {
-  background: #3e3e42;
-  color: #cccccc;
+  background: var(--background-primary);
+  color: var(--text-primary);
   padding: 10px 20px;
-  border: none;
+  border: 1px solid var(--border);
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
@@ -47,7 +47,8 @@
 }
 
 .btn-back:hover {
-  background: #4e4e52;
+  background: var(--background-secondary);
+  border-color: var(--primary-bright);
 }
 
 /* Dashboard Options */
@@ -59,8 +60,8 @@
 }
 
 .option-card {
-  background: #252526;
-  border: 2px solid #3e3e42;
+  background: var(--background-secondary);
+  border: 2px solid var(--border);
   border-radius: 12px;
   padding: 32px;
   cursor: pointer;
@@ -69,24 +70,25 @@
 }
 
 .option-card:hover {
-  border-color: #0e639c;
+  border-color: var(--primary-bright);
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(14, 99, 156, 0.2);
+  box-shadow: 0 8px 24px rgba(69, 104, 130, 0.3);
 }
 
 .option-icon {
   font-size: 48px;
   margin-bottom: 16px;
+  color: var(--accent);
 }
 
 .option-card h3 {
   font-size: 20px;
-  color: #cccccc;
+  color: var(--text-primary);
   margin: 0 0 12px 0;
 }
 
 .option-card p {
-  color: #858585;
+  color: var(--text-secondary);
   font-size: 14px;
   margin: 0;
   line-height: 1.6;
@@ -103,8 +105,8 @@
 }
 
 .repo-card {
-  background: #252526;
-  border: 1px solid #3e3e42;
+  background: var(--background-secondary);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 20px;
   display: flex;
@@ -114,8 +116,8 @@
 }
 
 .repo-card:hover {
-  border-color: #0e639c;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-color: var(--primary-bright);
+  box-shadow: 0 4px 12px rgba(69, 104, 130, 0.2);
 }
 
 .repo-info {
@@ -124,12 +126,12 @@
 
 .repo-info h3 {
   font-size: 18px;
-  color: #4ec9b0;
+  color: var(--accent);
   margin: 0 0 8px 0;
 }
 
 .repo-description {
-  color: #858585;
+  color: var(--text-secondary);
   font-size: 14px;
   margin: 0 0 12px 0;
 }
@@ -138,7 +140,7 @@
   display: flex;
   gap: 16px;
   font-size: 13px;
-  color: #858585;
+  color: var(--text-secondary);
   align-items: center;
 }
 
@@ -152,12 +154,12 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #4ec9b0;
+  background: var(--accent);
 }
 
 .private-badge {
-  background: #f14c4c;
-  color: white;
+  background: var(--primary-bright);
+  color: var(--accent);
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 11px;
@@ -170,10 +172,10 @@
 }
 
 .btn-secondary {
-  background: #3e3e42;
-  color: #cccccc;
+  background: var(--background-primary);
+  color: var(--text-primary);
   padding: 8px 16px;
-  border: none;
+  border: 1px solid var(--border);
   border-radius: 4px;
   cursor: pointer;
   font-size: 13px;
@@ -184,13 +186,14 @@
 }
 
 .btn-secondary:hover {
-  background: #4e4e52;
+  background: var(--background-secondary);
+  border-color: var(--primary-bright);
 }
 
 /* Upload Form */
 .upload-form {
-  background: #252526;
-  border: 1px solid #3e3e42;
+  background: var(--background-secondary);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 32px;
   max-width: 600px;
@@ -205,7 +208,7 @@
 
 .form-group label {
   display: block;
-  color: #cccccc;
+  color: var(--text-primary);
   font-size: 14px;
   font-weight: 600;
   margin-bottom: 8px;
@@ -215,24 +218,25 @@
 .form-group textarea {
   width: 100%;
   padding: 12px;
-  background: #1e1e1e;
-  border: 2px solid #3e3e42;
+  background: var(--background-primary);
+  border: 2px solid var(--border);
   border-radius: 6px;
-  color: #d4d4d4;
+  color: var(--text-primary);
   font-size: 14px;
   font-family: 'Courier New', Courier, monospace;
-  transition: border-color 0.2s;
+  transition: all 0.2s;
 }
 
 .form-group input[type="text"]:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #0e639c;
+  border-color: var(--primary-bright);
+  box-shadow: 0 0 0 3px rgba(69, 104, 130, 0.2);
 }
 
 .form-group small {
   display: block;
-  color: #858585;
+  color: var(--text-secondary);
   font-size: 12px;
   margin-top: 6px;
 }
@@ -264,13 +268,13 @@
 .upload-info {
   margin-top: 24px;
   padding: 16px;
-  background: #1e1e1e;
+  background: var(--background-primary);
   border-radius: 6px;
-  border-left: 4px solid #0e639c;
+  border-left: 4px solid var(--primary-bright);
 }
 
 .upload-info p {
-  color: #cccccc;
+  color: var(--text-primary);
   font-size: 13px;
   margin: 0 0 8px 0;
   font-weight: 600;
@@ -279,7 +283,7 @@
 .upload-info ul {
   margin: 0;
   padding-left: 20px;
-  color: #858585;
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
@@ -292,7 +296,7 @@
 .empty-state {
   text-align: center;
   padding: 60px 20px;
-  color: #858585;
+  color: var(--text-secondary);
 }
 
 .loading-state p,
@@ -315,18 +319,18 @@
 }
 
 .notification.success {
-  background: #16825d;
-  color: white;
+  background: var(--primary-medium);
+  color: var(--accent);
 }
 
 .notification.error {
-  background: #f14c4c;
-  color: white;
+  background: var(--primary-bright);
+  color: var(--accent);
 }
 
 .notification.info {
-  background: #0e639c;
-  color: white;
+  background: var(--background-tertiary);
+  color: var(--accent);
 }
 
 @keyframes slideIn {
@@ -347,17 +351,17 @@
 }
 
 .github-dashboard *::-webkit-scrollbar-track {
-  background: #1e1e1e;
+  background: var(--background-primary);
   border-radius: 4px;
 }
 
 .github-dashboard *::-webkit-scrollbar-thumb {
-  background: #424242;
+  background: var(--primary-bright);
   border-radius: 4px;
 }
 
 .github-dashboard *::-webkit-scrollbar-thumb:hover {
-  background: #4e4e4e;
+  background: var(--background-tertiary);
 }
 
 /* Responsive */
