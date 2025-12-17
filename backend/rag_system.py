@@ -1,7 +1,7 @@
 """
 Simple RAG (Retrieval-Augmented Generation) System for a GitHub commits dataset.
 
-This module builds a lightweight TF‑IDF based index over a CSV of historical
+This module builds a lightweight TF-IDF based index over a CSV of historical
 commits which can then be queried for similarity to a new change description.
 """
 
@@ -19,7 +19,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 class GitHubCommitsRAG:
     """
-    Tiny RAG system backed by TF‑IDF vectors over commit text.
+    Tiny RAG system backed by TF-IDF vectors over commit text.
     """
 
     def __init__(self, csv_path: str = "github_commits_api.csv") -> None:
@@ -55,7 +55,7 @@ class GitHubCommitsRAG:
 
     def train(self) -> None:
         """
-        Train the RAG system by creating TF‑IDF embeddings.
+        Train the RAG system by creating TF-IDF embeddings.
         """
         if self.df is None:
             raise ValueError("Dataframe is not loaded. Call load_data() first.")
