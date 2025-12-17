@@ -3,9 +3,9 @@ AI Commit Message Generator using RAG + Groq LLM.
 
 This module encapsulates the logic that:
 1. Reads diffs from the current Git repository.
-2. Analyses those diffs for high‑level statistics.
+2. Analyses those diffs for high-level statistics.
 3. Retrieves similar commits via a small RAG system.
-4. Calls the Groq LLM to generate a high‑quality commit message.
+4. Calls the Groq LLM to generate a high-quality commit message.
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ load_dotenv()
 
 class CommitMessageGenerator:
     """
-    High‑level service that combines Git, a RAG model and an LLM call.
+    High-level service that combines Git, a RAG model and an LLM call.
 
     This class is used from the Flask API, but it can also be consumed from
     other scripts or tests directly.
@@ -64,7 +64,7 @@ class CommitMessageGenerator:
 
         Args:
             staged: if True, show staged (`--cached`) changes only,
-                    otherwise show unstaged working‑directory changes.
+                    otherwise show unstaged working-directory changes.
         """
         try:
             if staged:
@@ -193,7 +193,7 @@ Return ONLY the commit message, nothing else."""
 
         Args:
             diff_text: Optional raw diff; if omitted we call `get_git_diff`.
-            custom_context: Optional extra natural‑language context for the LLM.
+            custom_context: Optional extra natural-language context for the LLM.
         """
         # If no diff was passed in we read the staged diff from Git
         if diff_text is None:
@@ -244,7 +244,7 @@ Return ONLY the commit message, nothing else."""
 
 def main() -> None:
     """
-    Small CLI entry point for manual commit‑message generation.
+    Small CLI entry point for manual commit-message generation.
     """
     print("=" * 80)
     print("AI Commit Message Generator (RAG + Groq)")
@@ -259,19 +259,19 @@ def main() -> None:
     try:
         generator = CommitMessageGenerator()
 
-        # Auto‑stage all changes for convenience when used from CLI
+        # Auto-stage all changes for convenience when used from CLI
         print("\nAuto-staging all changes (git add .)...")
         try:
             subprocess.run(["git", "add", "."], check=True, capture_output=True)
-            print("✅ Changes staged successfully")
+            print("Changes staged successfully")
         except subprocess.CalledProcessError as exc:
-            print(f"⚠️  Warning: Could not stage changes: {exc}")
+            print(f"Warning: Could not stage changes: {exc}")
 
         print("\nAnalyzing staged changes...")
         result = generator.generate_commit_message()
 
         if "error" in result:
-            print(f"\n❌ {result['error']}")
+            print(f"\nError: {result['error']}")
             return
 
         print("\n" + "=" * 80)
@@ -301,7 +301,7 @@ def main() -> None:
                     ["git", "commit", "-m", result["commit_message"]],
                     check=True,
                 )
-                print("✅ Committed successfully!")
+                print("Committed successfully!")
 
                 push_choice = input("\nPush to remote? (y/n): ").strip().lower()
 
@@ -320,20 +320,20 @@ def main() -> None:
                             ["git", "push", "origin", branch_name],
                             check=True,
                         )
-                        print(f"✅ Pushed to origin/{branch_name} successfully!")
+                        print(f"Pushed to origin/{branch_name} successfully!")
                     except subprocess.CalledProcessError as exc:
-                        print(f"❌ Failed to push: {exc}")
+                        print(f"Failed to push: {exc}")
                         print("You can push manually with: git push origin main")
                 else:
                     print("Changes committed locally. Push manually when ready.")
 
             except subprocess.CalledProcessError:
-                print("❌ Failed to commit. You can copy the message manually.")
+                print("Failed to commit. You can copy the message manually.")
         else:
             print("Commit message not used. You can copy it manually if needed.")
 
     except Exception as exc:  # noqa: BLE001
-        print(f"\n❌ Error: {str(exc)}")
+        print(f"\nError: {str(exc)}")
 
 
 if __name__ == "__main__":

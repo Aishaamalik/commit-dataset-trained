@@ -2,7 +2,7 @@
 GitHub API integration for repository management.
 
 This module concentrates all direct communication with the GitHub REST API and
-Git CLI for repository creation and upload flows. The higher‑level Flask routes
+Git CLI for repository creation and upload flows. The higher-level Flask routes
 use this class so they stay small and easy to reason about.
 """
 
@@ -151,11 +151,11 @@ class GitHubAPI:
         commit_message: str = "Initial commit",
     ) -> Dict:
         """
-        Upload a local project directory to a brand‑new GitHub repository.
+        Upload a local project directory to a brand-new GitHub repository.
 
-        High‑level steps:
+        High-level steps:
         1. Create the repository on GitHub.
-        2. Initialise git locally if needed.
+        2. Initialize git locally if needed.
         3. Stage and commit all files.
         4. Configure the `origin` remote.
         5. Push to GitHub.

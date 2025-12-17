@@ -2,7 +2,7 @@
 Flask API server for the AI Commit Message Generator.
 
 This module exposes all HTTP endpoints used by the React frontend while trying
-to keep the internal logic well‑structured, reusable and easy to understand.
+to keep the internal logic well-structured, reusable and easy to understand.
 
 NOTE: The external API (routes, HTTP verbs and JSON shapes) is preserved so the
 frontend continues to work as before. Most refactoring below focuses on:
@@ -41,12 +41,12 @@ CORS(app)
 # Global state and simple accessors
 # ---------------------------------------------------------------------------
 
-# NOTE: For a simple desktop‑style tool this in‑memory global state is fine.
+# NOTE: For a simple desktop-style tool this in-memory global state is fine.
 # If you ever deploy to multiple processes/containers you’ll want persistent
 # storage instead.
 
 current_repo_path: Optional[str] = None  # Path of the currently cloned repo
-generator: Optional[CommitMessageGenerator] = None  # Lazy‑created generator
+generator: Optional[CommitMessageGenerator] = None  # Lazy-created generator
 github_clients: Dict[str, GitHubAPI] = {}  # GitHub API clients per user token
 
 
@@ -100,7 +100,7 @@ def build_file_tree(base_path: str, current_path: str = "", prefix: str = "") ->
 
     try:
         for item in sorted(os.listdir(full_path)):
-            # Only skip the Git metadata directory; keep other dot‑files
+            # Only skip the Git metadata directory; keep other dot-files
             if item == ".git":
                 continue
 
@@ -153,7 +153,7 @@ def build_file_tree(base_path: str, current_path: str = "", prefix: str = "") ->
 
 def remove_readonly(func, path, excinfo) -> None:
     """
-    Error handler for Windows read‑only files used by `shutil.rmtree`.
+    Error handler for Windows read-only files used by `shutil.rmtree`.
 
     The handler makes a file writable and retries the supplied function.
     """
@@ -172,7 +172,7 @@ def force_remove_directory(path: str) -> bool:
     Robustly remove a directory even on Windows where file locks are common.
 
     Strategy:
-    1. Try `shutil.rmtree` with a handler that removes the read‑only flag.
+    1. Try `shutil.rmtree` with a handler that removes the read-only flag.
     2. If that fails, walk the tree, mark everything writable and retry.
     3. As a last resort run `git clean -fdx` and try again.
     """
@@ -224,7 +224,7 @@ def _check_git_available() -> Optional[str]:
     Verify that `git` is installed and reachable on the system PATH.
 
     Returns:
-        None if everything is fine, otherwise a human‑readable error message.
+        None if everything is fine, otherwise a human-readable error message.
     """
     try:
         git_check = subprocess.run(
@@ -281,14 +281,14 @@ def _clone_repository(repo_url: str) -> Dict[str, Any]:
         text=True,
         encoding="utf-8",
         errors="replace",
-        timeout=300,  # 5‑minute timeout
+        timeout=300,  # 5-minute timeout
     )
 
     if result.returncode != 0:
         error_msg = result.stderr or result.stdout or "Unknown git error"
         lower_error = error_msg.lower()
 
-        # Try to provide a more helpful high‑level message
+        # Try to provide a more helpful high-level message
         if "fatal: repository" in lower_error and "not found" in lower_error:
             return {"success": False, "error": "Repository not found. Please check the URL and your access permissions."}
         if "permission denied" in lower_error:
@@ -498,7 +498,7 @@ def get_file_content():
                 continue
 
         if content is None:
-            # Last resort: force UTF‑8 with replacement characters.
+            # Last resort: force UTF-8 with replacement characters.
             with open(file_path, "r", encoding="utf-8", errors="replace") as f:
                 content = f.read()
 
@@ -713,7 +713,7 @@ def git_push():
     try:
         repo_path = get_repo_path()
 
-        # Determine the currently checked‑out branch
+        # Determine the currently checked-out branch
         branch_result = subprocess.run(
             ["git", "branch", "--show-current"],
             capture_output=True,
@@ -738,7 +738,7 @@ def git_push():
 GitHub API endpoints
 --------------------
 These endpoints are thin wrappers around the `GitHubAPI` class which encapsulates
-all low‑level HTTP details. This keeps route handlers focused on validation and
+all low-level HTTP details. This keeps route handlers focused on validation and
 response formatting.
 """
 
@@ -939,7 +939,7 @@ def serve(path: str):
 
 if __name__ == "__main__":
     print("=" * 80)
-    print("🚀 AI Commit Generator - Web Interface")
+    print("AI Commit Generator - Web Interface")
     print("=" * 80)
     print("\nStarting server at http://localhost:5000")
     print("Press Ctrl+C to stop\n")
