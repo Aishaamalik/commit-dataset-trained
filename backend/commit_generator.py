@@ -173,7 +173,7 @@ class CommitMessageGenerator:
         diff_preview = diff_text[:2000] + "..." if len(diff_text) > 2000 else diff_text
 
         # Load and render the user prompt template
-        template = self.jinja_env.get_template("user_prompt.j2")
+        template = self.jinja_env.get_template("user_prompt.jinja")
         prompt = template.render(
             changed_files=changed_files,
             additions=analysis["additions"],
@@ -188,7 +188,7 @@ class CommitMessageGenerator:
         """
         Get the system prompt from Jinja2 template.
         """
-        template = self.jinja_env.get_template("system_prompt.j2")
+        template = self.jinja_env.get_template("system_prompt.jinja")
         return template.render()
 
     def generate_commit_message(self, diff_text: Optional[str] = None, custom_context: str = "") -> Dict:
