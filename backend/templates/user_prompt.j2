@@ -1,0 +1,110 @@
+## Task: Generate Professional Git Commit Message
+
+You are tasked with analyzing the provided code changes and generating a professional commit message that accurately reflects the modifications made.
+
+---
+
+## Change Summary
+
+**Files Modified:** {{ changed_files }}
+**Lines Added:** {{ additions }}
+**Lines Deleted:** {{ deletions }}
+
+---
+
+{% if similar_commits %}
+## Context: Similar Commit Messages
+
+The following commit messages from this project provide style and format guidance:
+
+{% for commit in similar_commits %}
+- {{ commit.message }}
+{% endfor %}
+
+Please align your commit message style with these examples while maintaining accuracy to the current changes.
+
+{% endif %}
+
+---
+
+## Code Changes
+
+The following git diff contains the actual code modifications:
+
+```
+{{ diff_preview }}
+```
+
+---
+
+{% if custom_context %}
+## Additional Context
+
+{{ custom_context }}
+
+{% endif %}
+
+---
+
+## Commit Message Requirements
+
+Generate a commit message that adheres to the following specifications:
+
+### Format Standards
+1. **Type Prefix**: Begin with a conventional commit type:
+   - `feat`: New feature
+   - `fix`: Bug fix
+   - `docs`: Documentation changes
+   - `style`: Code style changes (formatting, missing semicolons, etc.)
+   - `refactor`: Code refactoring without feature changes or bug fixes
+   - `test`: Adding or modifying tests
+   - `chore`: Maintenance tasks, dependency updates, build configuration
+
+2. **Subject Line**: 
+   - Maximum 50 characters
+   - Use imperative mood (e.g., "Add feature" not "Added feature")
+   - Be clear and concise
+   - Capitalize the first letter
+
+3. **Body (Optional)**:
+   - Provide additional context if the change requires explanation
+   - Explain the "what" and "why" when necessary
+   - Separate from subject with a blank line
+
+4. **Style Consistency**: 
+   - Match the tone and format of similar commits from this project (if provided)
+   - Maintain consistency with the project's commit message conventions
+
+---
+
+## Critical Accuracy Constraints
+
+To ensure factual accuracy and prevent misinformation, you must strictly observe these constraints:
+
+### Mandatory Requirements
+- **Evidence-Based**: Base your message exclusively on information visible in the git diff above
+- **Factual Precision**: Do not invent, infer, or assume details not present in the diff
+- **File Accuracy**: Reference only files, functions, or features explicitly listed in the FILES CHANGED section
+- **Observable Changes**: Describe only modifications that can be directly observed in the code changes
+- **Grounded Description**: If information is incomplete, describe only what is definitively visible
+
+### Prohibited Practices
+- Do not speculate about implementation details not shown in the diff
+- Do not assume the purpose or business impact of changes
+- Do not reference external dependencies unless they appear in the diff
+- Do not add context that cannot be verified from the provided changes
+
+---
+
+## Output Format
+
+Return **ONLY** the commit message text, with no additional commentary, explanations, or metadata.
+
+Example format:
+```
+type: brief subject line (max 50 chars)
+
+Optional body explaining the change in more detail
+if necessary.
+```
+

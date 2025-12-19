@@ -16,6 +16,7 @@ from typing import Dict, List, Optional
 
 from dotenv import load_dotenv
 from groq import Groq
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from rag_system import GitHubCommitsRAG
 
@@ -53,6 +54,15 @@ class CommitMessageGenerator:
             print("Training RAG model...")
             self.rag.train()
             self.rag.save_model()
+
+        # Initialize Jinja2 environment for template rendering
+        template_dir = os.path.join(os.path.dirname(__file__), "templates")
+        self.jinja_env = Environment(
+            loader=FileSystemLoader(template_dir),
+            autoescape=select_autoescape(['html', 'xml']),
+            trim_blocks=True,
+            lstrip_blocks=True
+        )
 
     # ------------------------------------------------------------------ #
     # Git helpers
@@ -153,39 +163,33 @@ class CommitMessageGenerator:
     # LLM integration
     # ------------------------------------------------------------------ #
 
-    def _build_prompt(self, diff_text: str, analysis: Dict, similar_commits) -> str:
+    def _build_prompt(self, diff_text: str, analysis: Dict, similar_commits, custom_context: str = "") -> str:
         """
-        Construct the full textual prompt to send to the Groq LLM.
+        Construct the full textual prompt to send to the Groq LLM using Jinja2 templates.
         """
         changed_files = ", ".join(analysis["files_changed"][:5])
 
         # Truncate diff aggressively to keep context within reasonable bounds
         diff_preview = diff_text[:2000] + "..." if len(diff_text) > 2000 else diff_text
 
-        rag_context = "\n".join([f"- {commit['message']}" for commit in similar_commits])
-
-        prompt = f"""You are an expert at writing clear, concise git commit messages following conventional commit standards.
-
-Based on the following git diff and similar commit examples, generate a professional commit message.
-
-FILES CHANGED: {changed_files}
-ADDITIONS: {analysis['additions']} lines
-DELETIONS: {analysis['deletions']} lines
-
-SIMILAR COMMIT MESSAGES FROM THIS PROJECT:
-{rag_context}
-
-GIT DIFF:
-{diff_preview}
-
-Generate a commit message that:
-1. Starts with a type (feat/fix/docs/style/refactor/test/chore)
-2. Has a clear, concise subject line (50 chars max)
-3. Optionally includes a body explaining the changes
-4. Follows the style of similar commits from this project
-
-Return ONLY the commit message, nothing else."""
+        # Load and render the user prompt template
+        template = self.jinja_env.get_template("user_prompt.j2")
+        prompt = template.render(
+            changed_files=changed_files,
+            additions=analysis["additions"],
+            deletions=analysis["deletions"],
+            similar_commits=similar_commits,
+            diff_preview=diff_preview,
+            custom_context=custom_context
+        )
         return prompt
+
+    def _get_system_prompt(self) -> str:
+        """
+        Get the system prompt from Jinja2 template.
+        """
+        template = self.jinja_env.get_template("system_prompt.j2")
+        return template.render()
 
     def generate_commit_message(self, diff_text: Optional[str] = None, custom_context: str = "") -> Dict:
         """
@@ -211,17 +215,16 @@ Return ONLY the commit message, nothing else."""
         # Query the RAG index for prior commits that resemble this change
         similar_commits = self.get_similar_commits(diff_summary, top_k=3)
 
-        # Build the final prompt for the model
-        prompt = self._build_prompt(diff_text, analysis, similar_commits)
-        if custom_context:
-            prompt = f"{prompt}\n\nAdditional context from user:\n{custom_context}"
+        # Build the final prompt for the model using Jinja2 templates
+        prompt = self._build_prompt(diff_text, analysis, similar_commits, custom_context)
+        system_prompt = self._get_system_prompt()
 
         try:
             chat_completion = self.client.chat.completions.create(
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a git commit message expert. Generate clear, professional commit messages.",
+                        "content": system_prompt,
                     },
                     {"role": "user", "content": prompt},
                 ],
